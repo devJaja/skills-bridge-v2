@@ -32,49 +32,67 @@ import {
   Scale,
   Calculator,
   TrendingUp,
-  FileText
+  FileText,
+  Loader
 } from 'lucide-react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { useAccount, useReadContract } from 'wagmi';
+import SkillBridgeABI from '../abi/SkillBridge.json';
 
-const skillCategories = {
-  WebDevelopment: { name: 'Web Development', icon: <Code className="w-4 h-4" />, color: 'from-blue-500 to-cyan-500' },
-  MobileDevelopment: { name: 'Mobile Development', icon: <Smartphone className="w-4 h-4" />, color: 'from-green-500 to-emerald-500' },
-  DataScience: { name: 'Data Science', icon: <BarChart3 className="w-4 h-4" />, color: 'from-purple-500 to-indigo-500' },
-  BlockchainDev: { name: 'Blockchain Development', icon: <Bitcoin className="w-4 h-4" />, color: 'from-yellow-500 to-orange-500' },
-  DevOps: { name: 'DevOps', icon: <Server className="w-4 h-4" />, color: 'from-gray-500 to-slate-500' },
-  GraphicDesign: { name: 'Graphic Design', icon: <Palette className="w-4 h-4" />, color: 'from-pink-500 to-rose-500' },
-  ContentWriting: { name: 'Content Writing', icon: <PenTool className="w-4 h-4" />, color: 'from-teal-500 to-cyan-500' },
-  VideoEditing: { name: 'Video Editing', icon: <Video className="w-4 h-4" />, color: 'from-red-500 to-pink-500' },
-  UIUXDesign: { name: 'UI/UX Design', icon: <Layers className="w-4 h-4" />, color: 'from-indigo-500 to-purple-500' },
-  Construction: { name: 'Construction', icon: <Home className="w-4 h-4" />, color: 'from-amber-500 to-orange-500' },
-  Electrical: { name: 'Electrical', icon: <Zap className="w-4 h-4" />, color: 'from-yellow-400 to-yellow-500' },
-  Plumbing: { name: 'Plumbing', icon: <Wrench className="w-4 h-4" />, color: 'from-blue-600 to-blue-500' },
-  HomeMaintenance: { name: 'Home Maintenance', icon: <Settings className="w-4 h-4" />, color: 'from-gray-600 to-gray-500' },
-  BusinessStrategy: { name: 'Business Strategy', icon: <Target className="w-4 h-4" />, color: 'from-emerald-500 to-green-500' },
-  Marketing: { name: 'Marketing', icon: <Megaphone className="w-4 h-4" />, color: 'from-orange-500 to-red-500' },
-  LegalServices: { name: 'Legal Services', icon: <Scale className="w-4 h-4" />, color: 'from-slate-600 to-gray-600' },
-  FinancialPlanning: { name: 'Financial Planning', icon: <Calculator className="w-4 h-4" />, color: 'from-green-600 to-emerald-600' }
-};
+const contractAddress = '0x62D61B40CD9C7a00ed6c80118fEC082da83726b8';
 
-const workTypeIcons = {
-  Remote: { icon: <Monitor className="w-4 h-4" />, label: "Remote" },
-  Physical: { icon: <Building className="w-4 h-4" />, label: "On-site" },
-  Both: { icon: <Globe className="w-4 h-4" />, label: "Hybrid" }
-};
+const skillCategories: { [key: number]: { name: string; icon: JSX.Element; color: string } } = {
+    0: { name: 'Web Development', icon: <Code className="w-4 h-4" />, color: 'from-blue-500 to-cyan-500' },
+    1: { name: 'Mobile Development', icon: <Smartphone className="w-4 h-4" />, color: 'from-green-500 to-emerald-500' },
+    2: { name: 'Data Science', icon: <BarChart3 className="w-4 h-4" />, color: 'from-purple-500 to-indigo-500' },
+    3: { name: 'Blockchain Development', icon: <Bitcoin className="w-4 h-4" />, color: 'from-yellow-500 to-orange-500' },
+    4: { name: 'DevOps', icon: <Server className="w-4 h-4" />, color: 'from-gray-500 to-slate-500' },
+    5: { name: 'Graphic Design', icon: <Palette className="w-4 h-4" />, color: 'from-pink-500 to-rose-500' },
+    6: { name: 'Content Writing', icon: <PenTool className="w-4 h-4" />, color: 'from-teal-500 to-cyan-500' },
+    7: { name: 'Video Editing', icon: <Video className="w-4 h-4" />, color: 'from-red-500 to-pink-500' },
+    8: { name: 'UI/UX Design', icon: <Layers className="w-4 h-4" />, color: 'from-indigo-500 to-purple-500' },
+    9: { name: 'Construction', icon: <Home className="w-4 h-4" />, color: 'from-amber-500 to-orange-500' },
+    10: { name: 'Electrical', icon: <Zap className="w-4 h-4" />, color: 'from-yellow-400 to-yellow-500' },
+    11: { name: 'Plumbing', icon: <Wrench className="w-4 h-4" />, color: 'from-blue-600 to-blue-500' },
+    12: { name: 'Home Maintenance', icon: <Settings className="w-4 h-4" />, color: 'from-gray-600 to-gray-500' },
+    13: { name: 'Business Strategy', icon: <Target className="w-4 h-4" />, color: 'from-emerald-500 to-green-500' },
+    14: { name: 'Marketing', icon: <Megaphone className="w-4 h-4" />, color: 'from-orange-500 to-red-500' },
+    15: { name: 'Legal Services', icon: <Scale className="w-4 h-4" />, color: 'from-slate-600 to-gray-600' },
+    16: { name: 'Financial Planning', icon: <Calculator className="w-4 h-4" />, color: 'from-green-600 to-emerald-600' }
+  };
+  
+  const workTypeIcons: { [key: number]: { icon: JSX.Element; label: string } } = {
+    0: { icon: <Monitor className="w-4 h-4" />, label: "Remote" },
+    1: { icon: <Building className="w-4 h-4" />, label: "On-site" },
+    2: { icon: <Globe className="w-4 h-4" />, label: "Hybrid" }
+  };
 
 const ServiceProviderProfile: React.FC = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { formData } = location.state || {};
-  const [activeTab, setActiveTab] = useState('overview');
-  const [isEditingProfile, setIsEditingProfile] = useState(false);
+    const navigate = useNavigate();
+    const { address } = useAccount();
+    const [activeTab, setActiveTab] = useState('overview');
+    const [isEditingProfile, setIsEditingProfile] = useState(false);
+  
+    const { data: userProfile, isLoading: isProfileLoading, error: profileError } = useReadContract({
+      address: contractAddress,
+      abi: SkillBridgeABI,
+      functionName: 'userProfiles',
+      args: [address],
+    });
+  
+    const { data: userSkills, isLoading: areSkillsLoading, error: skillsError } = useReadContract({
+      address: contractAddress,
+      abi: SkillBridgeABI,
+      functionName: 'getUserSkills',
+      args: [address],
+    });
 
-  const providerData = formData ? {
-    name: formData.name,
-    email: formData.email,
-    location: formData.location,
-    workType: formData.workType,
-    skillCategories: formData.skillCategories,
+  const providerData = userProfile ? {
+    name: (userProfile as any)[0],
+    email: (userProfile as any)[1],
+    location: (userProfile as any)[3],
+    workType: Number((userProfile as any)[4]),
+    skillCategories: userSkills ? (userSkills as number[]).map(Number) : [],
     userType: 'ServiceProvider',
     joinedDate: "2024-12-10", 
     profileImage: null,
@@ -90,10 +108,19 @@ const ServiceProviderProfile: React.FC = () => {
     memberSince: "December 2024" 
   } : null;
 
-  if (!providerData) {
+  if (isProfileLoading || areSkillsLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader className="w-12 h-12 animate-spin text-indigo-600" />
+        <p className="ml-4 text-lg">Loading Profile...</p>
+      </div>
+    );
+  }
+
+  if (profileError || skillsError || !providerData) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center">
-        <p className="text-red-500 mb-4">Error loading profile or profile not found.</p>
+        <p className="text-red-500 mb-4">Error loading profile. You might not be registered.</p>
         <button onClick={() => navigate('/onboarding')} className="px-4 py-2 bg-indigo-600 text-white rounded-lg">
           Go to Onboarding
         </button>
@@ -171,8 +198,8 @@ const ServiceProviderProfile: React.FC = () => {
                     <span className="text-sm">{providerData.location}</span>
                   </div>
                   <div className="flex items-center space-x-3 text-gray-600">
-                    {workTypeIcons[providerData.workType as keyof typeof workTypeIcons].icon}
-                    <span className="text-sm">{workTypeIcons[providerData.workType as keyof typeof workTypeIcons].label}</span>
+                    {workTypeIcons[providerData.workType as keyof typeof workTypeIcons]?.icon}
+                    <span className="text-sm">{workTypeIcons[providerData.workType as keyof typeof workTypeIcons]?.label}</span>
                   </div>
                   <div className="flex items-center space-x-3 text-gray-600">
                     <DollarSign className="w-4 h-4" />
@@ -268,6 +295,7 @@ const ServiceProviderProfile: React.FC = () => {
 
                   <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 border border-white/50">
                     <div className="flex items-center justify-between">
+.
                       <div>
                         <p className="text-sm text-gray-600">Avg Rating</p>
                         <p className="text-3xl font-bold text-yellow-600">{providerData.averageRating}</p>
@@ -295,8 +323,9 @@ const ServiceProviderProfile: React.FC = () => {
                 <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-8 border border-white/50">
                   <h3 className="text-xl font-bold text-gray-900 mb-6">Skills & Expertise</h3>
                   <div className="flex flex-wrap gap-3">
-                    {providerData.skillCategories.map((skillId: string) => {
-                      const skill = skillCategories[skillId as keyof typeof skillCategories];
+                  {providerData.skillCategories.map((skillId: number) => {
+                      const skill = skillCategories[skillId];
+                      if (!skill) return null;
                       return (
                         <div key={skillId} className="flex items-center space-x-2 bg-white/80 px-4 py-2 rounded-xl border border-gray-200">
                           <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${skill.color} flex items-center justify-center text-white`}>
