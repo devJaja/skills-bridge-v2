@@ -33,7 +33,7 @@ import {
   Loader,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi';
 
 import Loggo from '../assets/logo.png';
 import SkillBridgeABI from '../abi/SkillBridge.json';
@@ -138,6 +138,29 @@ const OnboardingPage: React.FC = () => {
 
   const navigate = useNavigate();
   const { address, isConnected } = useAccount();
+
+  const { data: isRegistered } = useReadContract({
+    address: contractAddress,
+    abi: SkillBridgeABI,
+    functionName: 'registeredUsers',
+    args: [address],
+  });
+
+  const { data: userProfile } = useReadContract({
+    address: contractAddress,
+    abi: SkillBridgeABI,
+    functionName: 'userProfiles',
+    args: [address],
+  });
+
+  useEffect(() => {
+    if (isRegistered && userProfile) {
+      // User is registered, redirect to their profile
+      const userType = Number((userProfile as any)[5]); // Corresponds to UserType enum
+      const path = userType === 0 ? '/clientprofile' : '/providerprofile';
+      navigate(path);
+    }
+  }, [isRegistered, userProfile, navigate]);
 
   // --- WAGMI CONTRACT WRITE SETUP ---
   const { data: hash, error, isPending: isLoading, writeContract } = useWriteContract();

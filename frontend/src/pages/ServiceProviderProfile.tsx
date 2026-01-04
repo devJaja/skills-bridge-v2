@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   User, 
   Mail, 
   MapPin, 
   Briefcase,
-  Settings,
+  Settings as SettingsIcon,
   Edit3,
   Calendar,
   DollarSign,
@@ -38,10 +38,11 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useAccount, useReadContract } from 'wagmi';
 import SkillBridgeABI from '../abi/SkillBridge.json';
+import SettingsPage from '../components/Settings';
 
 const contractAddress = '0x62D61B40CD9C7a00ed6c80118fEC082da83726b8';
 
-const skillCategories: { [key: number]: { name: string; icon: JSX.Element; color: string } } = {
+const skillCategories: { [key: number]: { name: string; icon: React.ReactNode; color: string } } = {
     0: { name: 'Web Development', icon: <Code className="w-4 h-4" />, color: 'from-blue-500 to-cyan-500' },
     1: { name: 'Mobile Development', icon: <Smartphone className="w-4 h-4" />, color: 'from-green-500 to-emerald-500' },
     2: { name: 'Data Science', icon: <BarChart3 className="w-4 h-4" />, color: 'from-purple-500 to-indigo-500' },
@@ -54,14 +55,14 @@ const skillCategories: { [key: number]: { name: string; icon: JSX.Element; color
     9: { name: 'Construction', icon: <Home className="w-4 h-4" />, color: 'from-amber-500 to-orange-500' },
     10: { name: 'Electrical', icon: <Zap className="w-4 h-4" />, color: 'from-yellow-400 to-yellow-500' },
     11: { name: 'Plumbing', icon: <Wrench className="w-4 h-4" />, color: 'from-blue-600 to-blue-500' },
-    12: { name: 'Home Maintenance', icon: <Settings className="w-4 h-4" />, color: 'from-gray-600 to-gray-500' },
+    12: { name: 'Home Maintenance', icon: <SettingsIcon className="w-4 h-4" />, color: 'from-gray-600 to-gray-500' },
     13: { name: 'Business Strategy', icon: <Target className="w-4 h-4" />, color: 'from-emerald-500 to-green-500' },
     14: { name: 'Marketing', icon: <Megaphone className="w-4 h-4" />, color: 'from-orange-500 to-red-500' },
     15: { name: 'Legal Services', icon: <Scale className="w-4 h-4" />, color: 'from-slate-600 to-gray-600' },
     16: { name: 'Financial Planning', icon: <Calculator className="w-4 h-4" />, color: 'from-green-600 to-emerald-600' }
   };
   
-  const workTypeIcons: { [key: number]: { icon: JSX.Element; label: string } } = {
+  const workTypeIcons: { [key: number]: { icon: React.ReactNode; label: string } } = {
     0: { icon: <Monitor className="w-4 h-4" />, label: "Remote" },
     1: { icon: <Building className="w-4 h-4" />, label: "On-site" },
     2: { icon: <Globe className="w-4 h-4" />, label: "Hybrid" }
@@ -73,7 +74,7 @@ const ServiceProviderProfile: React.FC = () => {
     const [activeTab, setActiveTab] = useState('overview');
     const [isEditingProfile, setIsEditingProfile] = useState(false);
   
-    const { data: userProfile, isLoading: isProfileLoading, error: profileError } = useReadContract({
+    const { data: userProfile, isLoading: isProfileLoading, error: profileError, refetch } = useReadContract({
       address: contractAddress,
       abi: SkillBridgeABI,
       functionName: 'userProfiles',
@@ -86,6 +87,10 @@ const ServiceProviderProfile: React.FC = () => {
       functionName: 'getUserSkills',
       args: [address],
     });
+
+    useEffect(() => {
+      refetch();
+    }, [activeTab, refetch]);
 
   const providerData = userProfile ? {
     name: (userProfile as any)[0],
@@ -148,8 +153,8 @@ const ServiceProviderProfile: React.FC = () => {
               <button className="p-2 rounded-xl hover:bg-gray-100 transition-colors">
                 <MessageCircle className="w-5 h-5 text-gray-600" />
               </button>
-              <button className="p-2 rounded-xl hover:bg-gray-100 transition-colors">
-                <Settings className="w-5 h-5 text-gray-600" />
+              <button className="p-2 rounded-xl hover:bg-gray-100 transition-colors" onClick={() => setActiveTab('settings')}>
+                <SettingsIcon className="w-5 h-5 text-gray-600" />
               </button>
             </div>
           </div>
@@ -245,7 +250,7 @@ const ServiceProviderProfile: React.FC = () => {
                   { id: 'overview', name: 'Overview', icon: <User className="w-4 h-4" /> },
                   { id: 'jobs', name: 'My Jobs', icon: <Briefcase className="w-4 h-4" /> },
                   { id: 'proposals', name: 'Proposals', icon: <FileText className="w-4 h-4" /> },
-                  { id: 'settings', name: 'Settings', icon: <Settings className="w-4 h-4" /> }
+                  { id: 'settings', name: 'Settings', icon: <SettingsIcon className="w-4 h-4" /> }
                 ].map((tab) => (
                   <button
                     key={tab.id}
@@ -359,7 +364,15 @@ const ServiceProviderProfile: React.FC = () => {
                 </div>
               </div>
             )}
-            {/* Other tabs content will be added here */}
+            {activeTab === 'settings' && providerData && (
+                <SettingsPage initialData={{
+                    name: providerData.name,
+                    email: providerData.email,
+                    location: providerData.location,
+                    workType: providerData.workType,
+                    skillCategories: providerData.skillCategories,
+                }} />
+            )}
           </div>
         </div>
       </div>
