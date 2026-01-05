@@ -38,7 +38,7 @@ import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadCont
 import Loggo from '../assets/logo.png';
 import SkillBridgeABI from '../abi/SkillBridge.json';
 
-const contractAddress = '0x62D61B40CD9C7a00ed6c80118fEC082da83726b8';
+const contractAddress = import.meta.env.VITE_CONTRACT_ADDRESS as `0x${string}`;
 
 const skillCategoryEnum: { [key: string]: number } = {
   WebDevelopment: 0,

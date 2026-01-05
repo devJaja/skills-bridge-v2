@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAccount, useReadContract } from 'wagmi';
 import abi from '../abi/SkillBridge.json';
-import { Briefcase, DollarSign, Calendar,} from 'lucide-react';
+import { Briefcase, DollarSign, Calendar } from 'lucide-react';
 
 interface JobListing {
   id: bigint;
@@ -13,8 +14,9 @@ interface JobListing {
   isOpen: boolean;
 }
 
-const BrowseJobsPage: React.FC = () => {
+const BrowseJobsPage: FC = () => {
   const { isConnected } = useAccount();
+  const navigate = useNavigate();
   const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS as `0x${string}`;
 
   const { data: openJobListings, isLoading, isError, error } = useReadContract({
@@ -30,7 +32,6 @@ const BrowseJobsPage: React.FC = () => {
 
   useEffect(() => {
     if (openJobListings) {
-      // Type assertion to help TypeScript understand the structure
       const typedListings = openJobListings as JobListing[];
       setJobs(typedListings);
     }
@@ -42,7 +43,11 @@ const BrowseJobsPage: React.FC = () => {
   };
 
   const formatBudget = (budgetWei: bigint) => {
-    return (Number(budgetWei) / 10**18).toFixed(2);
+    return (Number(budgetWei) / 10 ** 18).toFixed(2);
+  };
+
+  const handleViewDetails = (job: JobListing) => {
+    navigate(`/job/${job.id}`, { state: { job } });
   };
 
   if (!isConnected) {
@@ -101,7 +106,10 @@ const BrowseJobsPage: React.FC = () => {
                     <span>Client: {job.client.slice(0, 6)}...{job.client.slice(-4)}</span>
                   </div>
                 </div>
-                <button className="mt-6 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200 ease-in-out">
+                <button 
+                  onClick={() => handleViewDetails(job)}
+                  className="mt-6 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200 ease-in-out"
+                >
                   View Details
                 </button>
               </div>

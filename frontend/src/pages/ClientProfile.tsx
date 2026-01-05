@@ -39,7 +39,7 @@ import { useAccount, useReadContract } from 'wagmi';
 import SkillBridgeABI from '../abi/SkillBridge.json';
 import SettingsPage from '../components/Settings';
 
-const contractAddress = '0x62D61B40CD9C7a00ed6c80118fEC082da83726b8';
+const contractAddress = import.meta.env.VITE_CONTRACT_ADDRESS as `0x${string}`;
 
 const skillCategories: { [key: number]: { name: string; icon: React.ReactNode; color: string } } = {
   0: { name: 'Web Development', icon: <Code className="w-4 h-4" />, color: 'from-blue-500 to-cyan-500' },

@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
-import { useWriteContract } from 'wagmi';
+import { useAccount, useReadContract, useWriteContract } from 'wagmi';
 import SkillBridgeABI from '../abi/SkillBridge.json';
 import { Clock, User, ChevronLeft } from 'lucide-react';
 
@@ -9,8 +9,16 @@ const contractAddress = import.meta.env.VITE_CONTRACT_ADDRESS as `0x${string}`;
 const JobDetailsPage: React.FC = () => {
   useParams<{ id: string }>();
   const location = useLocation();
+  const { address } = useAccount();
   const { job } = location.state || {};
   const { writeContract } = useWriteContract();
+
+  const { data: userProfile } = useReadContract({
+    address: contractAddress,
+    abi: SkillBridgeABI,
+    functionName: 'userProfiles',
+    args: [address],
+  });
 
   const handleApply = () => {
     writeContract({
@@ -24,6 +32,11 @@ const JobDetailsPage: React.FC = () => {
   if (!job) {
     return <div>Job not found</div>;
   }
+
+  const isServiceProvider = userProfile ? Number((userProfile as any)[5]) === 1 : false;
+
+  console.log('userProfile', userProfile);
+  console.log('isServiceProvider', isServiceProvider);
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
@@ -62,9 +75,10 @@ const JobDetailsPage: React.FC = () => {
                   </div>
                   <button
                     onClick={handleApply}
-                    className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold py-3 px-6 rounded-xl flex items-center justify-center gap-2 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"
+                    disabled={!isServiceProvider}
+                    className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold py-3 px-6 rounded-xl flex items-center justify-center gap-2 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed"
                   >
-                    Apply Now
+                    {isServiceProvider ? 'Apply Now' : 'Only Service Providers can apply'}
                   </button>
                 </div>
               </div>
